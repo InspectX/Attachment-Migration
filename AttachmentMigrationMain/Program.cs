@@ -25,23 +25,23 @@ internal class Program
 
         appsettings = config.GetSection("Settings").Get<Appsettings>();
 
-        
+
         Process();
 
         Console.ReadLine();
     }
     public static void Process()
     {
-        string path,fileName,fileExtension,encryptedFileNameWithExtension;
+        string path, fileName, fileExtension, encryptedFileNameWithExtension;
         var records = ReadCSVFile();
         var tasks = GetTasksIdsAndReferenceNumber();
         var selfEvaluationTasks = GetSelfEvaluationTasksIdsAndReferenceNumber();
         var violationTasksTasks = GetViolationTaskIdsAndReferenceNumber();
         var appeals = GetAppealsIdsAndReferenceNumber();
         long tasksFinished = 1;
-        foreach ( var item in records) 
+        foreach (var item in records)
         {
-            
+
             try
             {
                 (fileName, fileExtension) = GetAttchmentWithExtension(item.DOC_NAME);
@@ -74,7 +74,7 @@ internal class Program
                 }
 
 
-                Console.WriteLine($"Downloading {Math.Round(((tasksFinished * 1.0 / records.Count) * 100 ), 4)}%");
+                Console.WriteLine($"Downloading {Math.Round(((tasksFinished * 1.0 / records.Count) * 100), 4)}%");
                 tasksFinished++;
 
             }
@@ -87,7 +87,7 @@ internal class Program
         Console.WriteLine($"Finished Downloading attachments");
     }
 
-  
+
 
     public static byte[] CallLocalService(AttachmentViewDTO attachmentViewDTO)
     {
@@ -120,7 +120,7 @@ internal class Program
         HttpClient http = new HttpClient();
 
         var url = $"{attachmentViewDTO.URL}?token={attachmentViewDTO.TOKEN}&documentLength={attachmentViewDTO.FILE_SIZE}&documentID={attachmentViewDTO.DOCCODE}&fileName={attachmentViewDTO.DOC_NAME}";
-        
+
         var responseResult = http.GetAsync(url).Result;
 
         var response = responseResult.Content.ReadAsStreamAsync().Result;
@@ -131,12 +131,12 @@ internal class Program
     }
     public static void CreateDirectoryIfNotExists(string path)
     {
-        if(!Directory.Exists(path))
+        if (!Directory.Exists(path))
         {
             Directory.CreateDirectory(path);
         }
     }
-    public static void SaveFileInPath(byte[] file,string path)
+    public static void SaveFileInPath(byte[] file, string path)
     {
         using var writer = new BinaryWriter(File.OpenWrite(path));
         writer.Write(file);
@@ -159,7 +159,7 @@ internal class Program
         }
     }
 
-    public static (string,string) GetAttchmentWithExtension(string fileName)
+    public static (string, string) GetAttchmentWithExtension(string fileName)
     {
         if (string.IsNullOrEmpty(fileName))
         {
@@ -212,7 +212,7 @@ internal class Program
         return result;
     }
 
-    private static void UpdateGrievanceAttachmentTable(long grievanceId, string encryptedFileName,string path,string extensoin)
+    private static void UpdateGrievanceAttachmentTable(long grievanceId, string encryptedFileName, string path, string extensoin)
     {
         try
         {
@@ -220,12 +220,12 @@ internal class Program
             {
                 dynamic result = connection.Query(@$"select g.TaskAssignmentId TaskId,g.Id GrievanceId  from EntityPortal.Grievances g
 where g.ID = {grievanceId}").FirstOrDefault();
-                if(result.TaskId != null)
+                if (result.TaskId != null)
                 {
                     string query = $"insert into EntityPortal.GrievanceAttachments ([TaskId],[GrievanceId],[FileName],[FilePath],[FileExtension],[AttachmentDate],[IncidentId]) Values ({result.TaskId},{result.GrievanceId},N'{encryptedFileName}',N'{path}','{extensoin}',GetDate(),NULL)";
                     connection.Execute(query);
                 }
-                
+
             }
         }
         catch (Exception ex)
@@ -242,10 +242,10 @@ where g.ID = {grievanceId}").FirstOrDefault();
         {
             using (SqlConnection connection = new SqlConnection(appsettings.BravoConnectionString))
             {
-                
-                    string query = $"insert into SubmissionAttachments ([TaskId],[FileName],[FilePath],[FileExtension],[AttachmentDate]) Values ({taskId},N'{encryptedFileName}',N'{path}','{extensoin}',GetDate())";
-                    connection.Execute(query);
-                
+
+                string query = $"insert into SubmissionAttachments ([TaskId],[FileName],[FilePath],[FileExtension],[AttachmentDate]) Values ({taskId},N'{encryptedFileName}',N'{path}','{extensoin}',GetDate())";
+                connection.Execute(query);
+
 
             }
         }

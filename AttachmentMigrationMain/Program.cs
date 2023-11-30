@@ -10,6 +10,9 @@ using Newtonsoft.Json;
 using System;
 using CodeLab.Bravo.Utilities;
 using System.Text.RegularExpressions;
+using System.Linq;
+using CsvHelper.Configuration;
+using System.Reflection.PortableExecutable;
 
 internal class Program
 {
@@ -49,8 +52,8 @@ internal class Program
                 if (item.RECORD_ID.StartsWith("VN")) //violation
                 {
                     var task = violationTasksTasks.FirstOrDefault(x => x.ReferenceNumber == item.RECORD_ID);
-                    //var file = CallWebService(item);
-                    var file = CallLocalService(item);
+                    var file = CallWebService(item);
+                    //var file = CallLocalService(item);
                     if (file != null && file.Length > 0)
                     {
                         path = appsettings.TasksPath + "\\" + (task == null ? "ViolationTasksNotExists" : (task?.Id.ToString() + "\\Violations"));
@@ -62,8 +65,8 @@ internal class Program
                 else if (item.RECORD_ID.StartsWith("RFA")) //appeals
                 {
                     var appeal = appeals.FirstOrDefault(x => x.ReferenceNumber == item.RECORD_ID);
-                    //var file = CallWebService(item);
-                    var file = CallLocalService(item);
+                    var file = CallWebService(item);
+                    //var file = CallLocalService(item);
                     if (file != null && file.Length > 0)
                     {
                         path = appsettings.AppealsPath + "\\" + (appeal == null ? "AppealNotExists" : appeal?.Id.ToString());
@@ -151,8 +154,17 @@ internal class Program
     }
     public static List<AttachmentViewDTO> ReadCSVFile()
     {
+
+        var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+        {
+            HeaderValidated = null,
+            MissingFieldFound = null,
+            BadDataFound = null,
+            HasHeaderRecord = true,
+            IgnoreBlankLines = false
+        };
         using (var reader = new StreamReader(appsettings.MigrationAttachmentXSLPath))
-        using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+        using (var csv = new CsvReader(reader, config))
         {
             var records = csv.GetRecords<AttachmentViewDTO>();
             return records.ToList();

@@ -1,0 +1,95 @@
+public PrintReportPartsHtml PrintReportForSubmission(long taskId, string language)
+        {
+            string JSON_string = GetReportJSON(taskId, language);
+            //var htmlbody = TransformToHtml(JSON_string, _XsltFormSubmissionTemplate,language);
+            //var headerAndFooter = GetHeaderAndFooter();
+            //return new PrintReportPartsHtml { 
+            //    HeaderHtml = headerAndFooter.Item1,
+            //    BodyHtml = htmlbody,
+            //    FooterHtml = headerAndFooter.Item2
+            //};
+            var json = JsonConvert.DeserializeObject< JObject>(JSON_string);
+            var result = ConvertJsonToXml(json, "data");
+            //var xmlString = result.ToString();
+
+            //var xslSheet = File.ReadAllText(_options.Value.ReportAppSettings.XsltFormSubmissionTemplate);
+            //XmlDocument xmlDoc = new XmlDocument();
+            //xmlDoc.LoadXml(xmlString);
+
+            //// Load XSLT data
+            //XslCompiledTransform xslt = new XslCompiledTransform();
+            //xslt.Load(XmlReader.Create(new System.IO.StringReader(xslSheet)));
+
+            //StringWriter results = new StringWriter();
+            //using (XmlReader reader = XmlReader.Create(new StringReader(xslSheet)))
+            //{
+            //    xslt.Transform(reader, null, results);
+            //}
+
+            //var rr = results.ToString();
+
+            string xmlData = result.ToString();
+
+            // Load XML data
+            XmlDocument xmlDoc = new XmlDocument();
+            xmlDoc.LoadXml(xmlData);
+
+            // Load XSLT data
+            XslCompiledTransform xslt = new XslCompiledTransform();
+            xslt.Load(_options.Value.ReportAppSettings.XsltFormSubmissionTemplate);
+
+            // Create a StringWriter to hold the transformed output
+            using (System.IO.StringWriter sw = new System.IO.StringWriter())
+            {
+                // Transform XML using XSLT
+                xslt.Transform(xmlDoc, null, sw);
+
+                // Get the transformed output as a string
+                string htmlOutput = sw.ToString();
+                Console.WriteLine(htmlOutput);
+                return new PrintReportPartsHtml
+                {
+                    HeaderHtml = "",
+                    BodyHtml = htmlOutput,
+                    FooterHtml = ""
+                };
+            }
+
+
+
+        }
+
+        XElement ConvertJsonToXml(JObject jsonObject, string rootElementName)
+        {
+            XElement root = new XElement(rootElementName);
+
+            foreach (JProperty property in jsonObject.Properties())
+            {
+                if (property.Value.Type == JTokenType.Object)
+                {
+                    root.Add(ConvertJsonToXml((JObject)property.Value, property.Name));
+                }
+                else if (property.Value.Type == JTokenType.Array)
+                {
+                    XElement subRoot = new XElement(property.Name);
+                    foreach (var item in property.Value)
+                    {
+                        if (item is JValue)
+                        {
+                            subRoot.Add(new XElement("element", item.ToString()));
+                        }
+                        else
+                        {
+                            subRoot.Add(ConvertJsonToXml((JObject)item, "element"));
+                        }
+                    }
+                    root.Add(subRoot);
+                }
+                else
+                {
+                    root.Add(new XElement(property.Name, property.Value.ToString()));
+                }
+            }
+
+            return root;
+        }
